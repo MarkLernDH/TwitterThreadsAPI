@@ -16,7 +16,6 @@ from bs4 import BeautifulSoup
 import requests
 import json
 from langchain.schema import SystemMessage
-from twit import tweeter
 from fastapi import FastAPI
 
 load_dotenv()
@@ -192,50 +191,37 @@ agent = initialize_agent(
 
 from langchain.retrievers.multi_query import MultiQueryRetriever
 template = """
-    You are a very experienced ghostwriter who excels at writing Twitter threads.
-You will be given a bunch of info below and a topic headline, your job is to use this info and your own knowledge
-to write an engaging Twitter thread.
-The first tweet in the thread should have a hook and engage with the user to read on.
+   You are a highly skilled ghostwriter specializing in crafting compelling LinkedIn posts for professionals and businesses. Your task is to synthesize the provided information and your expertise into a LinkedIn post that captivates and informs.
 
-Here is your style guide for how to write the thread:
+Here is your style guide for creating the post:
 1. Voice and Tone:
-Informative and Clear: Prioritize clarity and precision in presenting data. Phrases like "Research indicates," "Studies have shown," and "Experts suggest" impart a tone of credibility.
-Casual and Engaging: Maintain a conversational tone using contractions and approachable language. Pose occasional questions to the reader to ensure engagement.
+   - Professional and Authoritative: Use a tone that reflects expertise and knowledge. Phrases like "In my experience," "I've found," and "Industry trends suggest" establish authority and credibility.
+   - Engaging and Thought-Provoking: Employ a professional but inviting language. Ask rhetorical questions or present scenarios that prompt reflection and discussion.
+
 2. Mood:
-Educational: Create an atmosphere where the reader feels they're gaining valuable insights or learning something new.
-Inviting: Use language that encourages readers to dive deeper, explore more, or engage in a dialogue.
-3. Sentence Structure:
-Varied Sentence Lengths: Use a mix of succinct points for emphasis and longer explanatory sentences for detail.
-Descriptive Sentences: Instead of directive sentences, use descriptive ones to provide information. E.g., "Choosing a topic can lead to..."
-4. Transition Style:
-Sequential and Logical: Guide the reader through information or steps in a clear, logical sequence.
-Visual Emojis: Emojis can still be used as visual cues
+   - Insightful: The post should convey depth and offer fresh perspectives or analysis.
+   - Encouraging: Write in a way that encourages connection, reflection, and professional growth.
+
+3. Structure and Content:
+   - Comprehensive: Present information thoroughly to facilitate a deep understanding of the topic.
+   - Actionable Insights: Provide takeaways or next steps that professionals can apply to their contexts.
+
+4. Format:
+   - Bullet Points and Subheadings: Use bullet points for lists and subheadings for easy skimming and organization.
+   - Media and Visuals: Include relevant images, infographics, or videos to complement the text and illustrate points more effectively.
+
 5. Rhythm and Pacing:
-Steady Flow: Ensure a smooth flow of information, transitioning seamlessly from one point to the next.
-Data and Sources: Introduce occasional statistics, study findings, or expert opinions to bolster claims, and offer links or references for deeper dives.
-6. Signature Styles:
-Intriguing Introductions: Start tweets or threads with a captivating fact, question, or statement to grab attention.
-Question and Clarification Format: Begin with a general question or statement and follow up with clarifying information. E.g., "Why is sleep crucial? A study from XYZ University points out..."
+   - Balanced Composition: Use a mix of short statements for impact and longer explanations for substance.
+   - Evidence-based: Support arguments with data, citing studies or industry examples where appropriate.
 
-Engaging Summaries: Conclude with a concise recap or an invitation for further discussion to keep the conversation going.
-Distinctive Indicators for an Informational Twitter Style:
+6. Engagement:
+   - Inviting Comments: End with a question or call to action that invites comments and starts a conversation.
+   - Sharing Encouraged: Prompt readers to share the post if they find it valuable or know someone else who might.
 
-Leading with Facts and Data: Ground the content in researched information, making it credible and valuable.
-Engaging Elements: The consistent use of questions and clear, descriptive sentences ensures engagement without leaning heavily on personal anecdotes.
-Visual Emojis as Indicators: Emojis are not just for casual conversations; they can be effectively used to mark transitions or emphasize points even in an informational context.
-Open-ended Conclusions: Ending with questions or prompts for discussion can engage readers and foster a sense of community around the content.
-
-Last instructions:
-The twitter thread should be between the length of 3 and 10 tweets 
-Each tweet should start with (tweetnumber/total length)
-Dont overuse hashtags, only one or two for entire thread.
-The first tweet, do not place a number at the start.
-When numbering the tweetes Only the tweetnumber out of the total tweets. i.e. (1/9) not (tweet 1/9)
-Use links sparingly and only when really needed, but when you do make sure you actually include them AND ONLY PUT THE LINk, dont put brackets around them. 
-Only return the thread, no other text, and make each tweet its own paragraph.
-Make sure each tweet is lower that 220 chars
-    Topic Headline:{topic}
-    Info: {info}
+Final Instructions:
+The LinkedIn post should be substantial, but not exceed the platform's character limits. Use industry-related hashtags minimally and strategically to increase visibility. Provide links directly and ensure they are relevant to your content. Craft the post as a cohesive whole, with a strong opening, informative body, and engaging close. Ensure the language is polished, concise, and impactful.
+    Subject Headline:{subject}
+    Information: {information}
     """
 
 prompt = PromptTemplate(
@@ -249,42 +235,6 @@ llm_chain = LLMChain(
     verbose=True,
     
 )
-
-
-
-  
-twitapi = tweeter()
-
-def tweetertweet(thread):
-
-    tweets = thread.split("\n\n")
-   
-    #check each tweet is under 280 chars
-    for i in range(len(tweets)):
-        if len(tweets[i]) > 280:
-            prompt = f"Shorten this tweet to be under 280 characters: {tweets[i]}"
-            tweets[i] = llm.predict(prompt)[:280]
-    #give some spacing between sentances
-    tweets = [s.replace('. ', '.\n\n') for s in tweets]
-
-    for tweet in tweets:
-        tweet = tweet.replace('**', '')
-
-    try:
-        response = twitapi.create_tweet(text=tweets[0])
-        id = response.data['id']
-        tweets.pop(0)
-        for i in tweets:
-            print("tweeting: " + i)
-            reptweet = twitapi.create_tweet(text=i, 
-                                    in_reply_to_tweet_id=id, 
-                                    )
-            id = reptweet.data['id']
-        return "Tweets posted successfully"
-    except Exception as e:
-        return f"Error posting tweets: {e}"
-
-
 
 
 
@@ -302,5 +252,4 @@ def researchAgent( query: Query):
     content = agent({"input": query})
     actual_content = content['output']
     thread = llm_chain.predict(info = actual_content, topic = query)
-    ret = tweetertweet(thread)
-    return ret
+    return thread
