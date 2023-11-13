@@ -225,8 +225,10 @@ The LinkedIn post should be substantial, but not exceed the platform's character
     """
 
 prompt = PromptTemplate(
-    input_variables=["info","topic"], template=template
+    input_variables=["information", "subject"],  # Change the variable names here to match the keys expected by 'predict'
+    template=template
 )
+
 
 llm = ChatOpenAI(model_name="gpt-4")
 llm_chain = LLMChain(
@@ -251,5 +253,5 @@ def researchAgent( query: Query):
     query = query.query
     content = agent({"input": query})
     actual_content = content['output']
-    thread = llm_chain.predict(info = actual_content, topic = query)
+    thread = llm_chain.predict(information=actual_content, subject=query)
     return thread
