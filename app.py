@@ -230,6 +230,7 @@ Ensure that the post is balanced, reflecting the professional context of LinkedI
 Subject Headline: {subject}
 Information: {information}
 
+
     """
 prompt = PromptTemplate(
     input_variables=["info","topic"], template=template
